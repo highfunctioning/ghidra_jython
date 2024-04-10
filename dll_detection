@@ -1,0 +1,39 @@
+#@AUTHOR KALYANI, aniket, Athira
+from java.awt import Color
+
+def check_and_highlight_targets():
+    # Define the target values to check for
+    target_values = ['OpenProcess', 'VirtualAllocEx', 'WriteProcessMemory', 'CreateRemoteThread', 'CloseHandle']
+
+    # Get the current function
+    current_function = getFunctionContaining(currentAddress)
+
+    # Get the current instruction
+    current_instruction = getInstructionAt(currentAddress)
+
+    # Initialize a list to track whether each target value is found
+    found = [False] * len(target_values)
+
+    # Iterate over instructions in the current function
+    while getFunctionContaining(current_instruction.getAddress()) == current_function:
+        mnemonic = current_instruction.getMnemonicString()
+        if mnemonic == "CALL":
+            target_address = current_instruction.getOpObjects(0)[0]
+            symbol = getSymbolAt(target_address)
+            if symbol:
+                # Check if any of the target values are substrings of the symbol name
+                for i, target_value in enumerate(target_values):
+                    if target_value in symbol.getName():
+                        # Mark the target value as found
+                        found[i] = True
+                        # Highlight the instruction
+                        setBackgroundColor(current_instruction.getAddress(), Color(255, 220, 220))
+                        print(mnemonic + " " + symbol.getName())
+        current_instruction = current_instruction.getNext()
+
+    # Check if all target values are found
+    if all(found):
+        print("This binary maybe vulnerable to DLL Injection attack")
+    
+# Call the function to check and highlight target values
+check_and_highlight_targets()
